@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HAMDAN DOWNLOADER</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<!-- Socket.IO Library for Real-Time Progress -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.7.2/socket.io.min.js"></script>
+<style>
+  *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+  :root{--bg-primary:#0a0e1a;--bg-secondary:#111827;--bg-card:#161f33;--bg-card-hover:#1c2744;--bg-input:#0d1220;--accent:#00e68a;--accent-dim:#00e68a33;--accent-glow:#00e68a55;--warn:#f59e0b;--warn-dim:#f59e0b33;--error:#ef4444;--error-dim:#ef444433;--info:#38bdf8;--info-dim:#38bdf833;--text-primary:#f1f5f9;--text-secondary:#94a3b8;--text-muted:#64748b;--border:#1e293b;--border-light:#334155;--radius:12px;--radius-sm:8px;--radius-lg:16px;--shadow:0 4px 24px rgba(0,0,0,0.4);--transition:0.3s cubic-bezier(0.4,0,0.2,1)}
+  html{font-size:15px;scroll-behavior:smooth}body{font-family:'DM Sans',sans-serif;background:var(--bg-primary);color:var(--text-primary);min-height:100vh;overflow-x:hidden}
+  h1,h2,h3,h4,h5{font-family:'Space Grotesk',sans-serif;font-weight:600;letter-spacing:-0.02em}
+  ::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg-secondary)}::-webkit-scrollbar-thumb{background:var(--border-light);border-radius:3px}
+  .app-container{display:flex;min-height:100vh}.sidebar{width:260px;min-height:100vh;background:var(--bg-secondary);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;transition:transform var(--transition)}
+  .sidebar-header{padding:24px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+  .sidebar-logo{width:42px;height:42px;border-radius:var(--radius);background:linear-gradient(135deg,var(--accent),#00b36b);display:flex;align-items:center;justify-content:center;font-size:16px;color:#000;font-weight:700;box-shadow:0 0 20px var(--accent-glow)}
+  .sidebar-brand h2{font-size:1.1rem;line-height:1.2}.sidebar-brand span{font-size:0.7rem;color:var(--text-muted);font-weight:400;letter-spacing:0.05em;text-transform:uppercase}
+  .sidebar-nav{flex:1;padding:16px 12px;overflow-y:auto}.nav-section{margin-bottom:20px}.nav-section-title{font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-muted);padding:0 12px;margin-bottom:8px;font-weight:600}
+  .nav-item{display:flex;align-items:center;gap:12px;padding:11px 14px;border-radius:var(--radius-sm);cursor:pointer;transition:all var(--transition);color:var(--text-secondary);font-size:0.9rem;font-weight:500}
+  .nav-item:hover{background:var(--bg-card);color:var(--text-primary)}.nav-item.active{background:var(--accent-dim);color:var(--accent);box-shadow:inset 3px 0 0 var(--accent)}
+  .nav-item i{width:20px;text-align:center;font-size:1rem}.sidebar-footer{padding:16px 20px;border-top:1px solid var(--border)}.ytdlp-status{display:flex;align-items:center;gap:8px;font-size:0.75rem;color:var(--text-muted)}.ytdlp-dot{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pulse-dot 2s infinite}
+  @keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.4}}
+  .main-content{flex:1;margin-left:260px;min-height:100vh;background:var(--bg-primary);position:relative}
+  .topbar{padding:16px 32px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--bg-secondary);position:sticky;top:0;z-index:50;backdrop-filter:blur(12px)}
+  .topbar-left h1{font-size:1.3rem;font-weight:700}.topbar-left p{font-size:0.75rem;color:var(--text-muted);margin-top:2px}
+  .page-content{padding:28px 32px;position:relative;z-index:1}.page{display:none}.page.active{display:block;animation:fadeIn 0.4s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+  .card{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-lg);padding:24px;transition:all var(--transition);margin-bottom:20px}.card:hover{border-color:var(--border-light)}.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}.card-title{font-size:1.05rem;font-weight:600;display:flex;align-items:center;gap:10px}.card-title i{color:var(--accent)}
+  .input-group{position:relative;margin-bottom:16px}.input-group label{display:block;font-size:0.8rem;font-weight:600;color:var(--text-secondary);margin-bottom:6px}
+  .input-field{width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:'DM Sans',sans-serif;font-size:0.9rem;transition:all var(--transition);outline:none}
+  .input-field:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}.input-field::placeholder{color:var(--text-muted)}
+  .input-field-icon{position:relative}.input-field-icon .input-field{padding-left:44px}.input-field-icon i{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:var(--text-muted);font-size:0.95rem}.input-field-icon:focus-within i{color:var(--accent)}
+  textarea.input-field{resize:vertical;min-height:120px;font-family:'DM Sans',monospace}
+  select.input-field{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%2394a3b8' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px;cursor:pointer}
+  .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:11px 22px;border-radius:var(--radius-sm);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;border:none;transition:all var(--transition)}
+  .btn-primary{background:linear-gradient(135deg,var(--accent),#00b36b);color:#000;box-shadow:0 4px 15px var(--accent-dim)}.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 25px var(--accent-glow)}
+  .btn-secondary{background:var(--bg-card);color:var(--text-primary);border:1px solid var(--border)}.btn-secondary:hover{border-color:var(--accent);color:var(--accent)}
+  .btn-danger{background:var(--error-dim);color:var(--error);border:1px solid transparent}.btn-danger:hover{background:var(--error);color:#fff}
+  .btn-sm{padding:8px 14px;font-size:0.78rem}.btn-lg{padding:14px 28px;font-size:0.95rem}
+  .download-hero{background:linear-gradient(135deg,var(--bg-card) 0%,#0d1f2d 100%);border:1px solid var(--border);border-radius:var(--radius-lg);padding:32px;margin-bottom:24px;position:relative;overflow:hidden}
+  .download-hero-title{font-size:1.4rem;font-weight:700;margin-bottom:6px}.download-hero-desc{font-size:0.82rem;color:var(--text-muted);margin-bottom:24px}
+  .download-bar{display:flex;gap:12px;align-items:flex-end}.download-bar .input-group{flex:1;margin-bottom:0}.download-bar .btn{height:47px;min-width:140px}
+  .download-options{display:flex;gap:12px;margin-top:16px;flex-wrap:wrap;align-items:flex-end}.download-options .input-group{margin-bottom:0;min-width:140px}
+  .checkbox-group{display:flex;align-items:center;gap:8px;margin-bottom:0;padding-bottom:12px}.checkbox-group input{width:18px;height:18px;accent-color:var(--accent);cursor:pointer}.checkbox-group label{font-size:0.82rem;color:var(--text-secondary);cursor:pointer}
+  .progress-item{background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px 16px;margin-bottom:10px;display:flex;align-items:center;gap:14px}
+  .progress-item-thumb{width:64px;height:40px;border-radius:6px;object-fit:cover;background:var(--bg-input);flex-shrink:0}
+  .progress-item-info{flex:1;min-width:0}.progress-item-title{font-size:0.8rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .progress-bar-track{width:100%;height:6px;background:var(--bg-input);border-radius:3px;margin-top:6px;overflow:hidden}
+  .progress-bar-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent),#00b36b);transition:width 0.3s linear}
+  .progress-item-percent{font-size:0.75rem;color:var(--accent);font-weight:700;min-width:40px;text-align:right}
+  .progress-item-speed{font-size:0.65rem;color:var(--text-muted);margin-top:2px}
+  .sub-tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--bg-input);border-radius:var(--radius-sm);padding:4px;border:1px solid var(--border);width:fit-content}
+  .sub-tab{padding:8px 18px;border-radius:6px;font-size:0.8rem;font-weight:600;cursor:pointer;transition:all var(--transition);color:var(--text-muted);background:transparent;border:none;font-family:'DM Sans',sans-serif}
+  .sub-tab:hover{color:var(--text-primary)}.sub-tab.active{background:var(--accent);color:#000}
+  .sub-tab-content{display:none}.sub-tab-content.active{display:block;animation:fadeIn 0.3s ease}
+  .setting-item{display:flex;align-items:center;justify-content:space-between;padding:14px 0;border-bottom:1px solid var(--border)}.setting-item:last-child{border-bottom:none}
+  .cookie-textarea{width:100%;min-height:120px;padding:12px;background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);color:var(--text-primary);font-family:'DM Sans',monospace;font-size:0.78rem;resize:vertical;outline:none}
+  .cookie-textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+  .toast-container{position:fixed;top:20px;right:20px;z-index:9999;display:flex;flex-direction:column;gap:10px}
+  .toast{display:flex;align-items:center;gap:12px;padding:14px 20px;border-radius:var(--radius-sm);background:var(--bg-card);border:1px solid var(--border);box-shadow:var(--shadow);min-width:320px;animation:slideInRight 0.4s ease;position:relative;overflow:hidden}
+  .toast::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px}.toast.success::before{background:var(--accent)}.toast.error::before{background:var(--error)}.toast.warning::before{background:var(--warn)}.toast.info::before{background:var(--info)}
+  .toast i{font-size:1.1rem;flex-shrink:0}.toast.success i{color:var(--accent)}.toast.error i{color:var(--error)}.toast.warning i{color:var(--warn)}.toast.info i{color:var(--info)}
+  .toast-msg{font-size:0.82rem;font-weight:500;flex:1}.toast-close{cursor:pointer;color:var(--text-muted)}.toast-close:hover{color:var(--text-primary)}
+  @keyframes slideInRight{from{opacity:0;transform:translateX(60px)}to{opacity:1;transform:translateX(0)}}
+  .result-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;margin-top:20px}
+  .result-card{background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden;transition:0.3s}.result-card:hover{border-color:var(--accent)}
+  .result-card img{width:100%;aspect-ratio:16/9;object-fit:cover}.result-card-body{padding:10px}.result-card-title{font-size:0.8rem;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.result-card-meta{font-size:0.7rem;color:var(--text-muted)}
+  .cookie-status-badge{display:inline-flex;align-items:center;gap:6px;font-size:0.75rem;padding:4px 10px;border-radius:99px;font-weight:600}
+  .cookie-status-badge.active{background:var(--accent-dim);color:var(--accent)}.cookie-status-badge.inactive{background:var(--error-dim);color:var(--error)}
+  .about-container{max-width:600px;margin:0 auto;text-align:center}
+  .about-avatar{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,var(--accent),#00b36b);margin:0 auto 20px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;color:#000;box-shadow:0 0 30px var(--accent-glow)}
+  .about-name{font-size:1.8rem;font-weight:700;margin-bottom:8px}.about-title{font-size:0.95rem;color:var(--accent);font-weight:600;margin-bottom:20px;text-transform:uppercase;letter-spacing:0.05em}
+  .about-links{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+  .about-link{display:flex;align-items:center;gap:10px;padding:12px 20px;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);color:var(--text-primary);text-decoration:none;font-size:0.9rem;font-weight:600;transition:all var(--transition)}
+  .about-link:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--shadow)}
+  .about-link i{font-size:1.2rem}.about-link.whatsapp i{color:#25D366}.about-link.facebook i{color:#1877F2}
+  @media(max-width:900px){.sidebar{transform:translateX(-100%)}.main-content{margin-left:0}.download-bar{flex-direction:column}.download-bar .btn{width:100%}}
+</style>
+</head>
+<body>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<div class="app-container">
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="sidebar-logo">HD</div>
+      <div class="sidebar-brand"><h2>HAMDAN</h2><span>Downloader Pro</span></div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Downloaders</div>
+        <div class="nav-item active" onclick="switchPage('youtube',this)"><i class="fab fa-youtube"></i> YouTube </div>
+        <div class="nav-item" onclick="switchPage('instagram',this)"><i class="fab fa-instagram"></i> Instagram </div>
+        <div class="nav-item" onclick="switchPage('tiktok',this)"><i class="fab fa-tiktok"></i> TikTok / FB </div>
+        <div class="nav-item" onclick="switchPage('bulk',this)"><i class="fas fa-layer-group"></i> Universal Bulk </div>
+      </div>
+      <div class="nav-section">
+        <div class="nav-section-title">System</div>
+        <div class="nav-item" onclick="switchPage('settings',this)"><i class="fas fa-cog"></i> Settings & Cookies </div>
+        <div class="nav-item" onclick="switchPage('about',this)"><i class="fas fa-user-circle"></i> About Me </div>
+      </div>
+    </nav>
+    <div class="sidebar-footer"><div class="ytdlp-status"><div class="ytdlp-dot"></div><span>Engine Active</span></div></div>
+  </aside>
+
+  <main class="main-content">
+    <header class="topbar"><div class="topbar-left"><h1 id="pageTitle">YouTube Downloader</h1><p id="pageDesc">Single, Bulk, Channel & Thumbnail Options</p></div></header>
+
+    <div class="page-content">
+      <!-- YOUTUBE PAGE -->
+      <div class="page active" id="page-youtube">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="switchSubTab(this,'yt-single')">Single Video</button><button class="sub-tab" onclick="switchSubTab(this,'yt-bulk')">Bulk / Channel</button></div>
+        <div class="sub-tab-content active" id="yt-single">
+          <div class="download-hero">
+            <div class="download-hero-title">YouTube Single Video</div>
+            <div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-youtube"></i><input class="input-field" id="ytUrl" placeholder="Paste YouTube video URL..."></div></div><button class="btn btn-primary btn-lg" onclick="fetchSingle('youtube')"><i class="fas fa-search"></i> Fetch</button></div>
+            <div class="download-options"><div class="input-group"><label>Quality</label><select class="input-field" id="ytQuality"><option value="best">Best Quality</option><option value="1080" selected>1080p</option><option value="720">720p</option><option value="mp3">MP3 Audio</option></select></div><div class="checkbox-group"><input type="checkbox" id="ytDownloadThumb" checked><label for="ytDownloadThumb">Download Thumbnail Image</label></div></div>
+          </div>
+          <div id="ytResult" style="display:none" class="card"><div style="display:flex;gap:20px;flex-wrap:wrap"><img id="ytThumb" src="" style="width:320px;aspect-ratio:16/9;object-fit:cover;border-radius:var(--radius);background:var(--bg-input)"><div style="flex:1;min-width:200px"><h3 id="ytTitle" style="font-size:1.1rem;margin-bottom:8px"></h3><p id="ytMeta" style="font-size:0.82rem;color:var(--text-muted);margin-bottom:16px"></p><button class="btn btn-primary btn-lg" onclick="startSingleDownload('youtube')"><i class="fas fa-download"></i> Start Download</button></div></div></div>
+          <div id="ytProgress" class="download-progress"></div>
+        </div>
+        <div class="sub-tab-content" id="yt-bulk">
+          <div class="download-hero"><div class="download-hero-title">YouTube Bulk / Channel</div><div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-youtube"></i><input class="input-field" id="ytBulkUrl" placeholder="Channel or Playlist URL..."></div></div><button class="btn btn-primary btn-lg" onclick="fetchBulk('youtube')"><i class="fas fa-search"></i> Fetch All</button></div></div>
+          <div id="ytBulkResult" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3>Playlist Items</h3><button class="btn btn-primary" onclick="startBulkDownload('youtube')"><i class="fas fa-download"></i> Download All</button></div><div class="result-grid" id="ytBulkGrid"></div></div>
+          <div id="ytBulkProgress" class="download-progress"></div>
+        </div>
+      </div>
+
+      <!-- INSTAGRAM PAGE -->
+      <div class="page" id="page-instagram">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="switchSubTab(this,'ig-single')">Single Post / Reel</button><button class="sub-tab" onclick="switchSubTab(this,'ig-profile')">Full Profile</button></div>
+        <div style="background:var(--warn-dim);border:1px solid var(--warn);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:16px;font-size:0.78rem"><i class="fas fa-exclamation-triangle" style="color:var(--warn)"></i> Instagram requires cookies for profiles and reels. Add them in Settings.</div>
+        <div class="sub-tab-content active" id="ig-single">
+          <div class="download-hero"><div class="download-hero-title">Instagram Single Download</div><div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-instagram"></i><input class="input-field" id="igUrl" placeholder="https://www.instagram.com/p/... or /reel/..."></div></div><button class="btn btn-primary btn-lg" onclick="fetchSingle('instagram')"><i class="fas fa-search"></i> Fetch</button></div></div>
+          <div id="igResult" style="display:none" class="card"><div style="display:flex;gap:20px;flex-wrap:wrap"><img id="igThumb" src="" style="width:250px;aspect-ratio:1/1;object-fit:cover;border-radius:var(--radius);background:var(--bg-input)"><div style="flex:1;min-width:200px"><h3 id="igTitle" style="font-size:1.1rem;margin-bottom:16px"></h3><button class="btn btn-primary btn-lg" onclick="startSingleDownload('instagram')"><i class="fas fa-download"></i> Download</button></div></div></div>
+          <div id="igProgress" class="download-progress"></div>
+        </div>
+        <div class="sub-tab-content" id="ig-profile">
+          <div class="download-hero"><div class="download-hero-title">Instagram Profile Fetcher</div><div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-instagram"></i><input class="input-field" id="igProfileUrl" placeholder="https://www.instagram.com/username/"></div></div><button class="btn btn-primary btn-lg" onclick="fetchBulk('instagram')"><i class="fas fa-search"></i> Scan Profile</button></div></div>
+          <div id="igBulkResult" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3>Profile Posts</h3><button class="btn btn-primary" onclick="startBulkDownload('instagram')"><i class="fas fa-download"></i> Download All</button></div><div class="result-grid" id="igBulkGrid"></div></div>
+          <div id="igBulkProgress" class="download-progress"></div>
+        </div>
+      </div>
+
+      <!-- TIKTOK/FB PAGE -->
+      <div class="page" id="page-tiktok">
+        <div class="sub-tabs"><button class="sub-tab active" onclick="switchSubTab(this,'tt-single')">Single Video</button><button class="sub-tab" onclick="switchSubTab(this,'tt-profile')">Full Profile / Page</button></div>
+        <div class="sub-tab-content active" id="tt-single">
+          <div class="download-hero"><div class="download-hero-title">TikTok / Facebook Single Video</div><div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-tiktok"></i><input class="input-field" id="ttUrl" placeholder="TikTok or Facebook video URL..."></div></div><button class="btn btn-primary btn-lg" onclick="fetchSingle('tiktok')"><i class="fas fa-search"></i> Fetch</button></div></div>
+          <div id="ttResult" style="display:none" class="card"><div style="display:flex;gap:20px;flex-wrap:wrap"><img id="ttThumb" src="" style="width:200px;aspect-ratio:9/16;object-fit:cover;border-radius:var(--radius);background:var(--bg-input)"><div style="flex:1;min-width:200px"><h3 id="ttTitle" style="font-size:1.1rem;margin-bottom:16px"></h3><button class="btn btn-primary btn-lg" onclick="startSingleDownload('tiktok')"><i class="fas fa-download"></i> Download</button></div></div></div>
+          <div id="ttProgress" class="download-progress"></div>
+        </div>
+        <div class="sub-tab-content" id="tt-profile">
+          <div class="download-hero"><div class="download-hero-title">TikTok / Facebook Profile Fetcher</div><div class="download-bar"><div class="input-group"><div class="input-field-icon"><i class="fab fa-tiktok"></i><input class="input-field" id="ttProfileUrl" placeholder="https://www.tiktok.com/@username..."></div></div><button class="btn btn-primary btn-lg" onclick="fetchBulk('tiktok')"><i class="fas fa-search"></i> Scan Profile</button></div></div>
+          <div id="ttBulkResult" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3>Profile Videos</h3><button class="btn btn-primary" onclick="startBulkDownload('tiktok')"><i class="fas fa-download"></i> Download All</button></div><div class="result-grid" id="ttBulkGrid"></div></div>
+          <div id="ttBulkProgress" class="download-progress"></div>
+        </div>
+      </div>
+
+      <!-- UNIVERSAL BULK PAGE -->
+      <div class="page" id="page-bulk">
+        <div class="download-hero"><div class="download-hero-title">Universal Bulk Downloader</div><div class="download-hero-desc">Paste multiple URLs from ANY platform. Fetch details first, then download.</div><div class="input-group"><label>URLs List</label><textarea class="input-field" id="universalBulkUrls" placeholder="https://youtube.com/watch?v=...&#10;https://instagram.com/p/..."></textarea></div><div class="download-options"><button class="btn btn-secondary btn-lg" onclick="fetchUniversalBulk()"><i class="fas fa-eye"></i> Fetch All Details</button><div class="input-group"><label>Quality</label><select class="input-field" id="universalQuality"><option value="best">Best</option><option value="1080">1080p</option><option value="720">720p</option></select></div></div></div>
+        <div id="universalBulkResult" style="display:none"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><h3>Fetched Videos</h3><button class="btn btn-primary" onclick="startUniversalBulkDownload()"><i class="fas fa-download"></i> Download All Listed</button></div><div class="result-grid" id="universalBulkGrid"></div></div>
+        <div id="universalProgress" class="download-progress"></div>
+      </div>
+
+      <!-- SETTINGS PAGE -->
+      <div class="page" id="page-settings">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+          <div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-sync-alt"></i> System Update</div></div><p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:16px">Update engine to fix sites.</p><button class="btn btn-primary btn-lg" style="width:100%" onclick="updateYtDlp()"><i class="fas fa-arrow-up"></i> Update yt-dlp Engine</button><div id="updateStatus" style="margin-top:12px;font-size:0.78rem;color:var(--text-muted)"></div></div>
+          <div class="card"><div class="card-header"><div class="card-title"><i class="fas fa-bolt"></i> Speed Settings</div></div><div class="setting-item"><div><div class="setting-label">Concurrent Fragments (10x Speed)</div></div><div class="checkbox-group" style="margin:0"><input type="checkbox" checked disabled><label>Active</label></div></div></div>
+          <div class="card" style="grid-column:1/-1"><div class="card-header"><div class="card-title"><i class="fas fa-cookie-bite"></i> Advanced Cookie Manager</div></div><div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap" id="cookieStatusBadges"></div><div class="input-group"><label>Select Platform</label><select class="input-field" id="cookiePlatform"><option value="youtube">YouTube</option><option value="instagram" selected>Instagram</option><option value="tiktok">TikTok</option><option value="facebook">Facebook</option></select></div><div class="input-group"><label>Paste Netscape Cookies</label><textarea class="cookie-textarea" id="cookieInput" placeholder="# Netscape HTTP Cookie File..."></textarea></div><div style="display:flex;gap:8px"><button class="btn btn-primary" onclick="saveCookies()"><i class="fas fa-save"></i> Save Cookies</button><button class="btn btn-danger" onclick="clearCookies()"><i class="fas fa-trash"></i> Clear</button></div></div>
+        </div>
+      </div>
+
+      <!-- ABOUT PAGE -->
+      <div class="page" id="page-about">
+        <div class="card"><div class="about-container"><div class="about-avatar"><i class="fas fa-user"></i></div><h2 class="about-name">HAMDAN DOWNLOADER</h2><p class="about-title">Professional Social Media Downloader</p><p class="about-desc" style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7;margin-bottom:30px">The fastest and most reliable downloading experience for YouTube, Instagram, TikTok, Facebook, and 1000+ more platforms. Built with yt-dlp speed boost technology.</p><div style="margin-bottom:30px;padding:20px;background:var(--bg-input);border-radius:var(--radius);border:1px solid var(--border)"><p style="font-size:0.85rem;color:var(--text-secondary)">Created by <strong style="color:var(--accent)">Kashoo Khan</strong></p></div><h3 style="font-size:1rem;margin-bottom:16px;color:var(--text-secondary)">Contact & Social</h3><div class="about-links"><a href="https://wa.me/923032825926" target="_blank" class="about-link whatsapp"><i class="fab fa-whatsapp"></i> +92 303 2825926</a><a href="https://www.facebook.com/kashookhan2002" target="_blank" class="about-link facebook"><i class="fab fa-facebook"></i> Kashoo Khan</a></div><div style="margin-top:40px;padding-top:20px;border-top:1px solid var(--border)"><p style="font-size:0.7rem;color:var(--text-muted)">Version 2.0 | Powered by yt-dlp & Python</p></div></div></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script>
+const API = 'http://127.0.0.1:5000/api';
+let universalBulkData = [];
+
+// ===== SOCKET.IO CONNECTION FOR LIVE PROGRESS =====
+const socket = io('http://127.0.0.1:5000');
+
+socket.on('connect', () => { console.log('Socket Connected for Live Progress'); });
+socket.on('disconnect', () => { console.log('Socket Disconnected'); });
+
+// Listen for real-time progress from backend
+socket.on('download_progress', (data) => {
+    const taskId = data.task_id;
+    const percentStr = data.percent;
+    const speed = data.speed;
+    const eta = data.eta;
+
+    // Find the progress bar elements
+    const barEl = document.getElementById(`${taskId}-bar`);
+    const pctEl = document.getElementById(`${taskId}-pct`);
+    const speedEl = document.getElementById(`${taskId}-speed`);
+
+    if (barEl && pctEl) {
+        let percentVal = parseFloat(percentStr.replace('%', '')) || 0;
+        if(percentVal > 100) percentVal = 100;
+        
+        barEl.style.width = percentVal + '%';
+        pctEl.textContent = percentVal.toFixed(1) + '%';
+
+        if(percentVal >= 100) {
+            pctEl.style.color = 'var(--accent)';
+            if(speedEl) speedEl.textContent = 'Download Complete!';
+            showToast('Download Complete!', 'success');
+        } else if (percentStr === 'ERR') {
+            barEl.style.background = 'var(--error)';
+            pctEl.textContent = 'Failed';
+            if(speedEl) speedEl.textContent = speed;
+        } else {
+            if(speedEl) speedEl.textContent = `Speed: ${speed} | ETA: ${eta}`;
+        }
+    }
+});
+
+// ===== NAVIGATION & UI =====
+function switchPage(pageId, navEl) {
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); if(navEl) navEl.classList.add('active');
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active')); document.getElementById('page-' + pageId).classList.add('active');
+  const titles = { youtube:['YouTube Downloader','Single, Bulk, Channel & Thumbnails'], instagram:['Instagram Downloader','Posts, Reels & Profile Fetch'], tiktok:['TikTok / Facebook','Single Video & Profile Fetcher'], bulk:['Universal Bulk','Multi-Platform Downloader'], settings:['Settings & Cookies','Engine Update & Config'], about:['About Me','Developer Info'] };
+  const t = titles[pageId] || ['HAMDAN','']; document.getElementById('pageTitle').textContent = t[0]; document.getElementById('pageDesc').textContent = t[1];
+}
+function switchSubTab(btn, tabId) { btn.parentElement.querySelectorAll('.sub-tab').forEach(t => t.classList.remove('active')); btn.classList.add('active'); btn.closest('.page').querySelectorAll(':scope > .sub-tab-content').forEach(c => c.classList.remove('active')); document.getElementById(tabId).classList.add('active'); }
+function showToast(message, type='info') { const c = document.getElementById('toastContainer'); const icons = {success:'fa-check-circle',error:'fa-times-circle',warning:'fa-exclamation-triangle',info:'fa-info-circle'}; const t = document.createElement('div'); t.className=`toast ${type}`; t.innerHTML=`<i class="fas ${icons[type]}"></i><div class="toast-msg">${message}</div><div class="toast-close" onclick="this.parentElement.remove()"><i class="fas fa-times"></i></div>`; c.appendChild(t); setTimeout(()=>{if(t.parentElement)t.remove()},4000); }
+
+// ===== PROGRESS BAR CREATION (NO MORE SIMULATION) =====
+function createProgressBar(containerId, title, thumb, taskId) {
+  const c = document.getElementById(containerId);
+  const html = `<div class="progress-item" id="${taskId}">
+    <img class="progress-item-thumb" src="${thumb}" onerror="this.style.display='none'">
+    <div class="progress-item-info">
+      <div class="progress-item-title">${title}</div>
+      <div class="progress-bar-track"><div class="progress-bar-fill" id="${taskId}-bar" style="width:0%"></div></div>
+      <div class="progress-item-speed" id="${taskId}-speed">Waiting to start...</div>
+    </div>
+    <div class="progress-item-percent" id="${taskId}-pct">0%</div>
+  </div>`;
+  c.insertAdjacentHTML('beforeend', html);
+}
+
+// ===== API CALLS =====
+async function apiCall(endpoint, body) { try { const r = await fetch(`${API}/${endpoint}`, {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}); return await r.json(); } catch(e) { showToast('Backend Offline! Run main.py','error'); return null; } }
+
+async function fetchSingle(platform) {
+  const urlId = platform==='youtube'?'ytUrl':platform==='instagram'?'igUrl':'ttUrl';
+  const url = document.getElementById(urlId).value.trim(); if(!url){showToast('Enter URL','warning');return;}
+  showToast('Fetching info...','info');
+  const res = await apiCall('fetch-info', {url, platform});
+  if(res && res.success && res.type==='single') {
+    const d = res.data;
+    if(platform==='youtube') { document.getElementById('ytResult').style.display='block'; document.getElementById('ytThumb').src=d.thumbnail; document.getElementById('ytTitle').textContent=d.title; document.getElementById('ytMeta').textContent=`${d.uploader} · ${d.duration} · Size: ${d.filesize}`; }
+    else if(platform==='instagram') { document.getElementById('igResult').style.display='block'; document.getElementById('igThumb').src=d.thumbnail; document.getElementById('igTitle').textContent=d.title; }
+    else { document.getElementById('ttResult').style.display='block'; document.getElementById('ttThumb').src=d.thumbnail; document.getElementById('ttTitle').textContent=d.title; }
+    showToast('Fetched!','success');
+  } else if(res) { showToast('Error: '+res.error,'error'); }
+}
+
+async function startSingleDownload(platform) {
+  const urlId = platform==='youtube'?'ytUrl':platform==='instagram'?'igUrl':'ttUrl';
+  const url = document.getElementById(urlId).value.trim();
+  const quality = platform==='youtube' ? document.getElementById('ytQuality').value : 'best';
+  const thumb = platform==='youtube'?'ytThumb':platform==='instagram'?'igThumb':'ttThumb';
+  const title = platform==='youtube'?'ytTitle':platform==='instagram'?'igTitle':'ttTitle';
+  const progId = platform==='youtube'?'ytProgress':platform==='instagram'?'igProgress':'ttProgress';
+  const download_thumb = platform==='youtube' ? document.getElementById('ytDownloadThumb').checked : false;
+
+  // Generate Unique Task ID
+  const taskId = 'task-' + Date.now();
+  createProgressBar(progId, document.getElementById(title).textContent, document.getElementById(thumb).src, taskId);
+
+  const res = await apiCall('download', {urls:[url], quality, platform, download_thumbnail: download_thumb, task_id: taskId});
+  if(res && res.success) { showToast('Download Started!','info'); }
+}
+
+async function fetchBulk(platform) {
+  let urlId = ''; if(platform==='youtube') urlId='ytBulkUrl'; else if(platform==='instagram') urlId='igProfileUrl'; else urlId='ttProfileUrl';
+  const url = document.getElementById(urlId).value.trim(); if(!url){showToast('Enter URL','warning');return;}
+  showToast('Scanning...','info');
+  const res = await apiCall('fetch-info', {url, platform});
+  if(res && res.success && res.type==='list') {
+    let gridId = '', resultId = ''; if(platform==='youtube') { gridId='ytBulkGrid'; resultId='ytBulkResult'; } else if(platform==='instagram') { gridId='igBulkGrid'; resultId='igBulkResult'; } else { gridId='ttBulkGrid'; resultId='ttBulkResult'; }
+    document.getElementById(resultId).style.display='block'; let html = '';
+    res.data.items.forEach(item => { html += `<div class="result-card"><img src="${item.thumbnail}" onerror="this.src='https://picsum.photos/seed/err/320/180'"><div class="result-card-body"><div class="result-card-title">${item.title}</div><div class="result-card-meta">${item.duration}</div></div></div>`; });
+    document.getElementById(gridId).innerHTML = html; showToast(`Found ${res.data.items.length} items!`,'success');
+  } else if(res) { showToast('Error: '+res.error,'error'); }
+}
+
+async function startBulkDownload(platform) {
+  let urlId = '', progId = ''; if(platform==='youtube') { urlId='ytBulkUrl'; progId='ytBulkProgress'; } else if(platform==='instagram') { urlId='igProfileUrl'; progId='igBulkProgress'; } else { urlId='ttProfileUrl'; progId='ttBulkProgress'; }
+  const url = document.getElementById(urlId).value.trim();
+  const taskId = 'task-' + Date.now();
+  createProgressBar(progId, 'Bulk Profile Download', '', taskId);
+  const res = await apiCall('download', {urls:[url], quality:'best', platform, download_thumbnail:false, task_id: taskId});
+  if(res && res.success) { showToast('Bulk Download Started!','info'); }
+}
+
+async function fetchUniversalBulk() {
+  const text = document.getElementById('universalBulkUrls').value.trim(); if(!text){showToast('Paste URLs','warning');return;}
+  const urls = text.split('\n').map(u=>u.trim()).filter(u=>u); showToast(`Fetching ${urls.length} links...`,'info');
+  universalBulkData = []; let html = '';
+  for(const url of urls) {
+    const res = await apiCall('fetch-info', {url, platform:'other'});
+    if(res && res.success && res.type==='single') { universalBulkData.push(res.data.url || url); html += `<div class="result-card"><img src="${res.data.thumbnail}" onerror="this.src='https://picsum.photos/seed/err/320/180'"><div class="result-card-body"><div class="result-card-title">${res.data.title}</div><div class="result-card-meta">${res.data.uploader} · ${res.data.filesize}</div></div></div>`; }
+    else { html += `<div class="result-card" style="border-color:var(--error)"><div class="result-card-body"><div class="result-card-title" style="color:var(--error)">Failed: ${url.substring(0,30)}...</div></div></div>`; }
+  }
+  document.getElementById('universalBulkResult').style.display='block'; document.getElementById('universalBulkGrid').innerHTML = html; showToast('Details fetched!','success');
+}
+
+async function startUniversalBulkDownload() {
+  if(universalBulkData.length === 0) { showToast('Fetch details first','warning'); return; }
+  const quality = document.getElementById('universalQuality').value;
+  const taskId = 'task-' + Date.now();
+  createProgressBar('universalProgress', `Bulk Download (${universalBulkData.length} files)`, '', taskId);
+  const res = await apiCall('download', {urls: universalBulkData, quality, platform:'other', download_thumbnail:false, task_id: taskId});
+  if(res && res.success) { showToast(`${universalBulkData.length} downloads started!`,'info'); }
+}
+
+// SETTINGS
+async function updateYtDlp() { document.getElementById('updateStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...'; try { const r = await fetch(`${API}/update-ytdlp`); const res = await r.json(); document.getElementById('updateStatus').innerHTML = res.success ? '<span style="color:var(--accent)"><i class="fas fa-check-circle"></i> Updated!</span>' : '<span style="color:var(--error)">Failed</span>'; } catch(e) { document.getElementById('updateStatus').innerHTML = '<span style="color:var(--error)">Offline</span>'; } }
+async function saveCookies() { const p = document.getElementById('cookiePlatform').value; const c = document.getElementById('cookieInput').value.trim(); if(!c){showToast('Paste cookies','warning');return;} const res = await apiCall('save-cookies', {platform: p, cookie_string: c}); if(res && res.success) { showToast(`${p} cookies saved!`,'success'); checkCookieStatus(); } }
+async function clearCookies() { const p = document.getElementById('cookiePlatform').value; const res = await apiCall('save-cookies', {platform: p, cookie_string: ' '}); if(res && res.success) { showToast(`${p} cookies cleared!`,'info'); document.getElementById('cookieInput').value=''; checkCookieStatus(); } }
+async function checkCookieStatus() { try { const r = await fetch(`${API}/get-cookies-status`); const res = await r.json(); if(res.success) { let html = ''; const platforms = {youtube:'YouTube', instagram:'Instagram', tiktok:'TikTok', facebook:'Facebook'}; for(const [key, name] of Object.entries(platforms)) { const active = res.status[key]; html += `<div class="cookie-status-badge ${active?'active':'inactive'}"><i class="fas ${active?'fa-check-circle':'fa-times-circle'}"></i> ${name}</div>`; } document.getElementById('cookieStatusBadges').innerHTML = html; } } catch(e) {} }
+setTimeout(checkCookieStatus, 1000);
+</script>
+</body>
+</html>
